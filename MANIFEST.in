@@ -1,0 +1,8 @@
+include README.md
+include LICENSE.txt
+include requirements.txt
+
+exclude tests
+exclude *credentials*.json
+exclude *.git
+global-exclude *.pyc *.o

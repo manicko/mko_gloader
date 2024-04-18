@@ -1,0 +1,20 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+data_processing/__pycache__/*
+*.py[cod]
+
+# virtual env
+venv/
+.venv/
+
+.idea/
+.idea
+
+logs/*
+!.gitkeep
+
+/test_data/*
+mko_gloader/credentials.json
+*credentials*.json
+token.pickle
+/mko_gloader/logs/
