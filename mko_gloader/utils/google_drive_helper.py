@@ -8,32 +8,54 @@ from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload, MediaIoBaseDownload
 from google.oauth2 import service_account
 from .logger import Logger
+from .configurations import (
+    CREDENTIALS_PATH,
+    USE_TOKEN,
+    SCOPES
+
+)
 
 
 class GoogleDriveHelper:
     logger = Logger()
 
-    def __init__(self, local_source: [str, os.PathLike] = None, google_destination: str = None,
-                 google_parent_id: str = None, use_token: bool = False):
-        # If modifying these SCOPES, delete the output pickle file.
-        self.SCOPES = ['https://www.googleapis.com/auth/drive']
-        self.CREDENTIALS_JSON = 'credentials.json'
-        creds = self.get_credentials_token() if use_token else self.get_credentials_service()
-        self.service = self.initialize_service(creds)
+    def __init__(self,
+                 local_source: [str, os.PathLike] = None,
+                 destination_folder: str = None,
+                 destination_parent_id: str = None,
+                 cred_path: [str, os.PathLike] = CREDENTIALS_PATH,
+                 use_token: bool = USE_TOKEN,
+                 scopes=SCOPES
+                 ):
 
-        self.DESTINATION_FOLDER_NAME = google_destination if google_destination else 'root'
-        self.PARENT_FOLDER_ID = google_parent_id if google_parent_id else 'root'
-        self.OUTPUT_TOKEN_FILE = None
-        self.LOCAL_FILESYSTEM_FOLDER_PATH = local_source if local_source else ''
+        init_creds = self._set_credentials(cred_path, use_token, scopes)
+        self.service = self.initialize_service(init_creds)
+        self.destination_folder_name = destination_folder if destination_folder else 'root'
+        self.parent_folder_id = destination_parent_id if destination_parent_id else 'root'
+        self.local_filesystem_folder_path = local_source if local_source else ''
 
-    def get_credentials_token(self):
+    def _set_credentials(self, cred_path, use_token, scopes):
+        if os.path.isfile(cred_path):
+            current_dir = os.path.abspath(os.path.dirname(cred_path))
+            if use_token:
+                token_file = os.path.join(current_dir, 'token.pickle')
+                return self.get_credentials_token(cred_path, token_file, scopes)
+            else:
+                return self.get_credentials_service(cred_path, scopes)
+        else:
+            self.logger.error(f"Can't find: {cred_path}, please check path.")
+            # Optionally, log the full traceback for detailed error information
+            self.logger.error(traceback.format_exc())
+            # Raise the exception again to notify the caller about the error
+            raise FileNotFoundError
+
+    def get_credentials_token(self, credentials_json, token_file, scopes):
         try:
             credentials = None
-
             # The file token.pickle stores the user's access and refresh tokens and is
             # created automatically when the authorization flow completes for the first time.
-            if os.path.exists(self.OUTPUT_TOKEN_FILE):
-                with open(self.OUTPUT_TOKEN_FILE, 'rb') as token:
+            if os.path.exists(token_file):
+                with open(token_file, 'rb') as token:
                     credentials = pickle.load(token)
 
             # If there are no (valid) credentials available, let the user log in.
@@ -41,11 +63,11 @@ class GoogleDriveHelper:
                 if credentials and credentials.expired and credentials.refresh_token:
                     credentials.refresh(Request())
                 else:
-                    flow = InstalledAppFlow.from_client_secrets_file(self.CREDENTIALS_JSON, self.SCOPES)
+                    flow = InstalledAppFlow.from_client_secrets_file(credentials_json, scopes)
                     credentials = flow.run_local_server(port=0)
 
                 # Save the credentials for the next run
-                with open(self.OUTPUT_TOKEN_FILE, 'wb') as token:
+                with open(token_file, 'wb') as token:
                     pickle.dump(credentials, token)
 
             return credentials
@@ -58,12 +80,12 @@ class GoogleDriveHelper:
             # Raise the exception again to notify the caller about the error
             raise e
 
-    def get_credentials_service(self):
+    def get_credentials_service(self, credentials_json, scopes):
         """Authenticate to Google API using service account"""
 
         credentials = service_account.Credentials.from_service_account_file(
-            filename=self.CREDENTIALS_JSON,
-            scopes=self.SCOPES)
+            filename=credentials_json,
+            scopes=scopes)
 
         return credentials
 
@@ -148,7 +170,7 @@ class GoogleDriveHelper:
 
     def get_child_folder_id_by_name(self, folder_name, parent_id=None, create=False):
         if parent_id is None:
-            parent_id = self.PARENT_FOLDER_ID
+            parent_id = self.parent_folder_id
         try:
             results = self.service.files().list(
                 q=f"mimeType='application/vnd.google-apps.folder' and trashed=false"
@@ -185,7 +207,7 @@ class GoogleDriveHelper:
 
     def generate_tree_from_google_drive(self, tree_root, parent_id=None, path=None):
         if parent_id is None:
-            parent_id = self.PARENT_FOLDER_ID
+            parent_id = self.parent_folder_id
         if path is None:
             path = []
         try:
@@ -201,7 +223,7 @@ class GoogleDriveHelper:
             for i, item in enumerate(items):
                 if item['mimeType'] == 'application/vnd.google-apps.folder':
                     tree_root.add(
-                        [self.DESTINATION_FOLDER_NAME] + path + [item['name']],
+                        [self.destination_folder_name] + path + [item['name']],
                         item['id'],
                         is_dir=True
                     )
@@ -212,7 +234,7 @@ class GoogleDriveHelper:
                     )
                 else:
                     tree_root.add(
-                        [self.DESTINATION_FOLDER_NAME] + path + [item['name']],
+                        [self.destination_folder_name] + path + [item['name']],
                         item['id'], is_dir=False,
                         file_size=item['size']
                     )
@@ -227,7 +249,7 @@ class GoogleDriveHelper:
     def upload_file(self, file_path, folder_id):
         try:
             file_name = os.path.basename(file_path)
-            media_body = MediaFileUpload(self.LOCAL_FILESYSTEM_FOLDER_PATH + file_path, resumable=True)
+            media_body = MediaFileUpload(self.local_filesystem_folder_path + file_path, resumable=True)
             request = self.service.files().create(
                 supportsAllDrives=True,
                 media_body=media_body,
@@ -299,11 +321,11 @@ class GoogleDriveHelper:
             folder_name = os.path.basename(folder_path)
             folder_id = self.create_folder(folder_name, parent_folder_id)
 
-            for item in os.listdir(self.LOCAL_FILESYSTEM_FOLDER_PATH + folder_path):
+            for item in os.listdir(self.local_filesystem_folder_path + folder_path):
                 item_path = os.path.join(folder_path, item)
-                if os.path.isfile(self.LOCAL_FILESYSTEM_FOLDER_PATH + item_path):
+                if os.path.isfile(self.local_filesystem_folder_path + item_path):
                     self.upload_file(item_path, folder_id)
-                elif os.path.isdir(self.LOCAL_FILESYSTEM_FOLDER_PATH + item_path):
+                elif os.path.isdir(self.local_filesystem_folder_path + item_path):
                     self.upload_folder(item_path, folder_id)
 
             print(
@@ -326,7 +348,7 @@ class GoogleDriveHelper:
             if folders_already_created != len(to_upload_path[1:-1]):
                 final_id = self.create_folders_for_upload(to_upload_path[folders_already_created + 1:], nearest_node.id)
             self.upload_file(folder_path, final_id) if not os.path.isdir(
-                self.LOCAL_FILESYSTEM_FOLDER_PATH + folder_path) else self.upload_folder(
+                self.local_filesystem_folder_path + folder_path) else self.upload_folder(
                 folder_path, final_id)
         except Exception as e:
             # Log the error using the logger
@@ -339,7 +361,7 @@ class GoogleDriveHelper:
     def bulk_delete(self, ids):
         def callback(request_id, response, exception):
             if not exception:
-                print(response[request_id])
+                print(response)
             else:
                 print(exception)
 
@@ -440,11 +462,11 @@ class GoogleDriveHelper:
                 fileId=drive_file_id
             )
 
-            dir_path = (self.LOCAL_FILESYSTEM_FOLDER_PATH + output_path).removesuffix(
-                os.path.basename((self.LOCAL_FILESYSTEM_FOLDER_PATH + output_path)))
+            dir_path = (self.local_filesystem_folder_path + output_path).removesuffix(
+                os.path.basename((self.local_filesystem_folder_path + output_path)))
             os.makedirs(dir_path, exist_ok=True)
 
-            with io.FileIO(self.LOCAL_FILESYSTEM_FOLDER_PATH + output_path, 'wb') as output_file:
+            with io.FileIO(self.local_filesystem_folder_path + output_path, 'wb') as output_file:
                 downloader = MediaIoBaseDownload(output_file, request)
                 done = False
 
@@ -464,7 +486,7 @@ class GoogleDriveHelper:
 
     def download_folder(self, output_path, drive_folder_id):
         try:
-            os.makedirs(self.LOCAL_FILESYSTEM_FOLDER_PATH + output_path, exist_ok=True)
+            os.makedirs(self.local_filesystem_folder_path + output_path, exist_ok=True)
 
             results = self.service.files().list(
                 q=f"parents in '{drive_folder_id}'",

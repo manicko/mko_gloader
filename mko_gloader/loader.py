@@ -1,5 +1,5 @@
 import os
-import utils
+import mko_gloader.utils as utils
 import traceback
 
 
@@ -45,7 +45,7 @@ class GLoader:
         """
         try:
             gdrive_tree, local_fs_tree = utils.Tree(), utils.Tree()
-            gdrive_tree.add([self.gdrive.DESTINATION_FOLDER_NAME], self.gdrive.PARENT_FOLDER_ID)
+            gdrive_tree.add([self.gdrive.destination_folder_name], self.gdrive.parent_folder_id)
             self.gdrive.generate_tree_from_google_drive(gdrive_tree)
             self.filesystem.generate_tree_from_filesystem(local_fs_tree)
             # gdrive_tree.traverse_and_print()

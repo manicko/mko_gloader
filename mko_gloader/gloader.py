@@ -1,8 +1,11 @@
 import os
-import utils
+import mko_gloader.utils as utils
 from argparse import ArgumentParser
-from utils.functions import (
+from mko_gloader.utils.functions import (
     pathstr_to_list
+)
+from mko_gloader.utils.configurations import (
+    set_config_path
 )
 from loader import GLoader
 
@@ -83,6 +86,10 @@ def main(list_of_args: list = None):
                                 help='Clear trash')
         arg_parser.add_argument('-t', '--test', action='store_true',
                                 help='Run test function')
+
+        arg_parser.add_argument('-set', '--settings-path', nargs=1, type=str,
+                                help='Set folder to keep ini file with settings')
+
         if args is not None:
             return arg_parser.parse_args(args)
         return arg_parser.parse_args()
@@ -114,9 +121,11 @@ def main(list_of_args: list = None):
         gd_instance.list_permissions(*params['list_permissions'])
     elif params['drop_permissions'] is not None:
         gd_instance.drop_permission(*params['drop_permissions'])
+    elif params['settings_path'] is not None:
+        set_config_path(params['settings_path'])
     elif params['test'] is not None:
         list_files(gd_instance, *params['test'])
 
 
 if __name__ == "__main__":
-    main(['-ls'])
+    main()
