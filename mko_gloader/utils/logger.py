@@ -1,8 +1,6 @@
 import logging
 from datetime import datetime
-from .configurations import (
-    LOGS_FOLDER_PATH
-)
+from .config_helper import ConfigHelper
 
 
 class Logger:
@@ -15,10 +13,13 @@ class Logger:
     logger.error("This is an error message.")
     """
 
-    def __init__(self, logs_folder_path: str = LOGS_FOLDER_PATH):
+    def __init__(self, logs_folder_path: str = None):
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.INFO)
+
         formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', datefmt='%d-%m-%y %I:%M:%S %p')
+        # configuration = ConfigHelper()
+        # logs_folder_path = logs_folder_path or configuration.logs_folder_path
         if logs_folder_path:
             file_handler = logging.FileHandler(
                 logs_folder_path + "/" + datetime.now().strftime("%d-%m-%y") + ".log")

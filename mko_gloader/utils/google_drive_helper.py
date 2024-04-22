@@ -8,12 +8,7 @@ from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload, MediaIoBaseDownload
 from google.oauth2 import service_account
 from .logger import Logger
-from .configurations import (
-    CREDENTIALS_PATH,
-    USE_TOKEN,
-    SCOPES
-
-)
+from .config_helper import ConfigHelper
 
 
 class GoogleDriveHelper:
@@ -23,11 +18,14 @@ class GoogleDriveHelper:
                  local_source: [str, os.PathLike] = None,
                  destination_folder: str = None,
                  destination_parent_id: str = None,
-                 cred_path: [str, os.PathLike] = CREDENTIALS_PATH,
-                 use_token: bool = USE_TOKEN,
-                 scopes=SCOPES
+                 cred_path: [str, os.PathLike] = None,
+                 use_token: bool = None,
+                 scopes=None
                  ):
-
+        self.configuration = ConfigHelper()
+        cred_path = cred_path or self.configuration.credentials_path
+        use_token = use_token or self.configuration.use_token
+        scopes = scopes or self.configuration.scopes
         init_creds = self._set_credentials(cred_path, use_token, scopes)
         self.service = self.initialize_service(init_creds)
         self.destination_folder_name = destination_folder if destination_folder else 'root'

@@ -1,12 +1,11 @@
 import os
-import mko_gloader.utils as utils
+
+import utils as utils
 from argparse import ArgumentParser
-from mko_gloader.utils.functions import (
+from utils.functions import (
     pathstr_to_list
 )
-from mko_gloader.utils.configurations import (
-    set_config_path
-)
+
 from loader import GLoader
 
 
@@ -101,6 +100,9 @@ def main(list_of_args: list = None):
     if not any(params.values()):
         raise arg_parser.error(f"You should set parameters to run")
 
+    if params['settings_path'] is not None:
+        utils.ConfigHelper(params['settings_path'][0])
+        return
     gd_instance = utils.GoogleDriveHelper()
 
     if params['upload'] is not None:
@@ -121,8 +123,6 @@ def main(list_of_args: list = None):
         gd_instance.list_permissions(*params['list_permissions'])
     elif params['drop_permissions'] is not None:
         gd_instance.drop_permission(*params['drop_permissions'])
-    elif params['settings_path'] is not None:
-        set_config_path(params['settings_path'])
     elif params['test'] is not None:
         list_files(gd_instance, *params['test'])
 
