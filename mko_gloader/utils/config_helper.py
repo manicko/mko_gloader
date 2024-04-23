@@ -113,34 +113,35 @@ class ConfigHelper:
             return False
 
     def check_configuration(self):
+        try:
+            if not Path.is_file(self.config):
+                self.restore_defaults()
+                print(f'Please configure {self.config} before usage')
+            else:
+                self.config_reader.read(self.config)
 
-        if not Path.is_file(self.config):
+                # GoogleDriveAPI Settings
+                self.credentials_path = self.config_reader.get('GoogleDriveAPI', 'cred_path')
+                self.use_token = self.config_reader.getboolean('GoogleDriveAPI', 'use_token')
+                self.scopes = self.config_reader.getlist('GoogleDriveAPI', 'scopes')
+
+                # Logs Settings
+                self.keep_logs = self.config_reader.getboolean('Logs', 'keep_logs')
+                self.logs_folder_path = self.config_reader.get('Logs', 'logs_path')
+
+                check_config = True
+                if not Path.is_file(Path(self.credentials_path)):
+                    print(f"Credentials file is not found. Check path to credentials in {self.config}")
+                    check_config = False
+                if self.keep_logs and (not self.logs_folder_path or not Path.is_dir(Path(self.logs_folder_path))):
+                    print(f"Logs folder is not found. Check path to Logs folder in in {self.config}")
+                    check_config = False
+                if check_config:
+                    return
+        except Exception as err:
             self.restore_defaults()
-            print(f'Please configure {self.config} before usage')
-        else:
-            self.config_reader.read(self.config)
-
-            # GoogleDriveAPI Settings
-            self.credentials_path = self.config_reader.get('GoogleDriveAPI', 'cred_path')
-            self.use_token = self.config_reader.getboolean('GoogleDriveAPI', 'use_token')
-            self.scopes = self.config_reader.getlist('GoogleDriveAPI', 'scopes')
-
-            # Logs Settings
-            self.keep_logs = self.config_reader.getboolean('Logs', 'keep_logs')
-            self.logs_folder_path = self.config_reader.get('Logs', 'logs_path')
-
-            check_config = True
-            if not Path.is_file(Path(self.credentials_path)):
-                print(f"Credentials file is not found. Check path to credentials in {self.config}")
-                check_config = False
-            if self.keep_logs and (not self.logs_folder_path or not Path.is_dir(Path(self.logs_folder_path))):
-                print(f"Logs folder is not found. Check path to Logs folder in in {self.config}")
-                check_config = False
-            if check_config:
-                return
+            print(f'Error: {err}, restoring default settings.')
         exit()
-
-
 
     def restore_defaults(self):
         self.set_configuration(self.config_reader, self.config, CONFIG_DEFAULTS)

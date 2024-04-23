@@ -85,10 +85,10 @@ def main(list_of_args: list = None):
                                 help='Clear trash')
         arg_parser.add_argument('-t', '--test', action='store_true',
                                 help='Run test function')
-
         arg_parser.add_argument('-set', '--settings-path', nargs=1, type=str,
                                 help='Set folder to keep ini file with settings')
-
+        arg_parser.add_argument('--drop-settings', action='store_true',
+                                help='Drop settings to defaults')
         if args is not None:
             return arg_parser.parse_args(args)
         return arg_parser.parse_args()
@@ -103,6 +103,9 @@ def main(list_of_args: list = None):
     if params['settings_path'] is not None:
         utils.ConfigHelper(params['settings_path'][0])
         return
+    elif params['drop_settings'] is True:
+        conf_help = utils.ConfigHelper()
+        conf_help.restore_defaults()
 
     gd_instance = utils.GoogleDriveHelper()
 
