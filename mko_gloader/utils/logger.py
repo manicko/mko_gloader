@@ -18,8 +18,8 @@ class Logger:
         self.logger.setLevel(logging.INFO)
 
         formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', datefmt='%d-%m-%y %I:%M:%S %p')
-        # configuration = ConfigHelper()
-        # logs_folder_path = logs_folder_path or configuration.logs_folder_path
+        configuration = ConfigHelper()
+        logs_folder_path = logs_folder_path or configuration.logs_folder_path
         if logs_folder_path:
             file_handler = logging.FileHandler(
                 logs_folder_path + "/" + datetime.now().strftime("%d-%m-%y") + ".log")

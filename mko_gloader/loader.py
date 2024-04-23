@@ -14,7 +14,7 @@ class GLoader:
     gloader_instance.sync()
     """
 
-    logger = utils.Logger()
+
 
     def __init__(self, local_source: [str, os.PathLike] = None, google_destination: str = None,
                  google_parent: str = None):
@@ -22,6 +22,7 @@ class GLoader:
         Initialize GSpace by creating instances of GoogleDriveHelper,
         FilesystemHelper, and initializing Google Drive service.
         """
+        self.logger = utils.Logger()
         try:
             self.local_source = local_source
 

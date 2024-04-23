@@ -16,16 +16,16 @@ class FilesystemHelper:
     filesystem_helper.soft_delete_from_filesystem("/example/file.txt")
     """
 
-    logger = Logger()
-
-
     def __init__(self, source_folder_path, backup_folder_path: str = None):
         """
         Initialize FilesystemHelper with folder and backup paths.
         """
+        self.configuration = ConfigHelper()
+        self.logger = Logger()
         self.SOURCE_FOLDER_PATH = source_folder_path
         self.BACKUP_FOLDER_PATH = backup_folder_path
-        self.configuration = ConfigHelper()
+
+
     def generate_tree_from_filesystem(self, tree):
         """
         Generate a tree structure based on the current filesystem.

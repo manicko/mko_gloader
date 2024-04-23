@@ -12,7 +12,6 @@ from .config_helper import ConfigHelper
 
 
 class GoogleDriveHelper:
-    logger = Logger()
 
     def __init__(self,
                  local_source: [str, os.PathLike] = None,
@@ -22,7 +21,10 @@ class GoogleDriveHelper:
                  use_token: bool = None,
                  scopes=None
                  ):
+
         self.configuration = ConfigHelper()
+        self.logger = Logger()
+
         cred_path = cred_path or self.configuration.credentials_path
         use_token = use_token or self.configuration.use_token
         scopes = scopes or self.configuration.scopes

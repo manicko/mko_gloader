@@ -10,13 +10,12 @@ venv/
 .idea/
 .idea
 
-logs/*
-!.gitkeep
-
 /test_data/*
-credentials/credentials.json
+
+*config.ini
+*credentials/
+*logs/
+
+*credentials/credentials.json
 *credentials*.json
-token.pickle
-/mko_gloader/logs/
-*path_to_config.ini
-/credentials/
+*token.pickle

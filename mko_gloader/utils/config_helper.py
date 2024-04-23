@@ -15,14 +15,15 @@ PATH_KEEPER_DEFAULTS = {
             'path': ''
         }
 }
+
 CONFIG_NAME = 'config.ini'
 CONFIG_DEFAULTS = {
     'Logs': {
-        'logs_path': None,
+        'logs_path': '',
         'keep_logs': True
     },
     'GoogleDriveAPI': {
-        'cred_path': None,
+        'cred_path': '',
         'use_token': False,
         'scopes': [
             'https://www.googleapis.com/auth/drive'
@@ -35,23 +36,23 @@ CONFIG_DEFAULTS = {
 class ConfigHelper:
     def __init__(self, config_folder: str | None = None):
 
-        self.config_path = self.check_configuration(config_folder)
+        self.config_path = self.get_config(config_folder)
 
-        # Google Drive API Settings
+        # Gloader Settings
         self.config_reader = ConfigParser(converters=CONVERTERS)
         self.config = Path.joinpath(self.config_path, CONFIG_NAME)
-        if not Path.is_file(self.config):
-            self.restore_defaults()
-        self.config_reader.read(self.config)
 
-        self.use_token = self.config_reader.getboolean('GoogleDriveAPI', 'use_token')
-        self.credentials_path = self.config_reader.get('GoogleDriveAPI', 'cred_path')
-        self.scopes = self.config_reader.getlist('GoogleDriveAPI', 'scopes')
-        # General Settings
-        self.logs_folder_path = self.config_reader.get('Logs', 'logs_path')
-        self.keep_logs = self.config_reader.getboolean('Logs', 'keep_logs')
+        # GoogleDriveAPI Settings
+        self.use_token = None
+        self.credentials_path = None
+        self.scopes = None
 
-    def check_configuration(self, config_folder: str | None = None):
+        # Logs Settings
+        self.logs_folder_path = None
+        self.keep_logs = None
+        self.check_configuration()
+
+    def get_config(self, config_folder: str | None = None):
         keeper_reader = ConfigParser()
         keeper_path = Path.joinpath(ROOT_DIR, PATH_KEEPER)
 
@@ -68,7 +69,6 @@ class ConfigHelper:
         self.set_configuration(keeper_reader, keeper_path, PATH_KEEPER_DEFAULTS)
         print("Path to config folder is not set. Please use the '-set' key to set it.")
         exit()
-
 
     @staticmethod
     def set_configuration(reader, config_path: str | os.PathLike,
@@ -111,6 +111,36 @@ class ConfigHelper:
             print(f"Error {e} occurred")
             print("============================================")
             return False
+
+    def check_configuration(self):
+
+        if not Path.is_file(self.config):
+            self.restore_defaults()
+            print(f'Please configure {self.config} before usage')
+        else:
+            self.config_reader.read(self.config)
+
+            # GoogleDriveAPI Settings
+            self.credentials_path = self.config_reader.get('GoogleDriveAPI', 'cred_path')
+            self.use_token = self.config_reader.getboolean('GoogleDriveAPI', 'use_token')
+            self.scopes = self.config_reader.getlist('GoogleDriveAPI', 'scopes')
+
+            # Logs Settings
+            self.keep_logs = self.config_reader.getboolean('Logs', 'keep_logs')
+            self.logs_folder_path = self.config_reader.get('Logs', 'logs_path')
+
+            check_config = True
+            if not Path.is_file(Path(self.credentials_path)):
+                print(f"Credentials file is not found. Check path to credentials in {self.config}")
+                check_config = False
+            if self.keep_logs and (not self.logs_folder_path or not Path.is_dir(Path(self.logs_folder_path))):
+                print(f"Logs folder is not found. Check path to Logs folder in in {self.config}")
+                check_config = False
+            if check_config:
+                return
+        exit()
+
+
 
     def restore_defaults(self):
         self.set_configuration(self.config_reader, self.config, CONFIG_DEFAULTS)
