@@ -3,7 +3,6 @@ import os
 from configparser import ConfigParser
 from pathlib import Path
 
-
 ROOT_DIR = Path(__file__).resolve().parent
 
 CONVERTERS = {
@@ -54,22 +53,22 @@ class ConfigHelper:
 
     def check_configuration(self, config_folder: str | None = None):
         keeper_reader = ConfigParser()
-        path_keeper = Path.joinpath(ROOT_DIR, PATH_KEEPER)
+        keeper_path = Path.joinpath(ROOT_DIR, PATH_KEEPER)
+
         if config_folder:
             PATH_KEEPER_DEFAULTS['PathToConfig']['path'] = config_folder
-            self.set_configuration(keeper_reader, path_keeper, PATH_KEEPER_DEFAULTS)
-        if not Path.exists(path_keeper):
-            self.set_configuration(keeper_reader, path_keeper, PATH_KEEPER_DEFAULTS)
+            self.set_configuration(keeper_reader, keeper_path, PATH_KEEPER_DEFAULTS)
 
-        keeper_reader.read(path_keeper)
-        if not keeper_reader.has_section('PathToConfig'):
-            self.set_configuration(keeper_reader, path_keeper, PATH_KEEPER_DEFAULTS)
-        config_path = keeper_reader.get('PathToConfig', 'path', fallback='')
+        if Path.exists(keeper_path):
+            keeper_reader.read(keeper_path)
+            config_path = keeper_reader.get('PathToConfig', 'path', fallback=None)
+            if config_path and self.path_exist(config_path):
+                return Path(config_path)
 
-        if not config_path or not self.path_exist(config_path):
-            print("Configuration is not set, please provide the setting path using the '-set' key.")
-            exit()
-        return Path(config_path)
+        self.set_configuration(keeper_reader, keeper_path, PATH_KEEPER_DEFAULTS)
+        print("Path to config folder is not set. Please use the '-set' key to set it.")
+        exit()
+
 
     @staticmethod
     def set_configuration(reader, config_path: str | os.PathLike,
@@ -85,28 +84,33 @@ class ConfigHelper:
 
     @staticmethod
     def path_exist(setting_folder):
-        if Path.exists(Path(setting_folder)):
-            return True
-        confirmation = ''
-        while confirmation not in ["yes", "no"]:
-            confirmation = input(f"Create folder '{setting_folder}'? [yes, no]\n >>> ")
-            if confirmation not in ["yes", "no"]:
-                print("Usage: 'yes' or 'no'")
-
-        if confirmation == "no":
-            print("============================================")
-            print("Canceled by user!\nExiting ...")
-            print("============================================")
-            return False
-        else:
-            try:
-                Path.mkdir(setting_folder)
+        try:
+            setting_folder = Path(setting_folder).resolve()
+            if Path.exists(setting_folder):
                 return True
-            except Exception as e:
+
+            confirmation = ''
+            while confirmation not in ["yes", "no"]:
+                confirmation = input(f"The path specified is not exist. "
+                                     f"Create folder '{str(setting_folder)}'? "
+                                     f"[yes, no]\n >>> ")
+                if confirmation not in ["yes", "no"]:
+                    print("Usage: 'yes' or 'no'")
+
+            if confirmation == "no":
                 print("============================================")
-                print(f"Failed to create folder '{setting_folder}'")
+                print("Canceled by user!\nExiting ...")
                 print("============================================")
                 return False
+            else:
+                Path.mkdir(setting_folder)
+                return True
+        except Exception as e:
+            print("============================================")
+            print(f"Failed to create folder '{setting_folder}'")
+            print(f"Error {e} occurred")
+            print("============================================")
+            return False
 
     def restore_defaults(self):
         self.set_configuration(self.config_reader, self.config, CONFIG_DEFAULTS)

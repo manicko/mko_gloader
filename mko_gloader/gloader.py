@@ -102,7 +102,10 @@ def main(list_of_args: list = None):
 
     if params['settings_path'] is not None:
         utils.ConfigHelper(params['settings_path'][0])
+        print('The configuration file is successfully created, '
+              'please change the settings before usage')
         return
+
     gd_instance = utils.GoogleDriveHelper()
 
     if params['upload'] is not None:

@@ -41,7 +41,8 @@ class GoogleDriveHelper:
             else:
                 return self.get_credentials_service(cred_path, scopes)
         else:
-            self.logger.error(f"Can't find: {cred_path}, please check path.")
+            print(f"Can't find: {cred_path}, please check settings.")
+            self.logger.error(f"Can't find: {cred_path}, please check settings.")
             # Optionally, log the full traceback for detailed error information
             self.logger.error(traceback.format_exc())
             # Raise the exception again to notify the caller about the error
