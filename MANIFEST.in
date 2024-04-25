@@ -3,6 +3,8 @@ include LICENSE.txt
 include requirements.txt
 
 exclude tests
+exclude credentials
+exclude logs
 exclude *credentials*.json
 exclude *.git
-global-exclude *.pyc *.o
+global-exclude *.pyc *.o *.ini

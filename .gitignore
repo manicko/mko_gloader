@@ -10,6 +10,10 @@ venv/
 .idea/
 .idea
 
+# packages
+*.egg-info
+/dist
+
 /test_data/*
 
 *config.ini
