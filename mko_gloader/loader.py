@@ -1,5 +1,5 @@
 import os
-import utils as utils
+import mko_gloader.utils as utils
 import traceback
 
 

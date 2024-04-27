@@ -1,12 +1,12 @@
 import os
 
-import utils as utils
+import mko_gloader.utils as utils
 from argparse import ArgumentParser
-from utils.functions import (
+from mko_gloader.utils.functions import (
     pathstr_to_list
 )
 
-from loader import GLoader
+from mko_gloader.loader import GLoader
 
 
 def upload(gd_instance, parser, *args):
@@ -66,7 +66,9 @@ def main(list_of_args: list = None):
         """Parse arguments """
         arg_parser.add_argument('-up', '--upload', nargs='+', type=str,
                                 help='Upload from LOCAL_PATH to GOOGLE_DRIVE_PATH, '
-                                     'usage: -up /home/user/test/file.1 /docs/test/')
+                                     'usage1: -up /home/user/test/file.1 /docs/test/'
+                                     'usage2: -up /home/user/test/file.1 /docs/test/ {parent_id}'
+                                )
         arg_parser.add_argument('-a', '--access', nargs=3, type=str,
                                 help='Grant access to file or folder by id {e-mail} {role} {id}  ')
         arg_parser.add_argument('-lp', '--list-permissions', nargs=1, type=str,
